@@ -6,7 +6,7 @@ from flask_cors import CORS
 import platform
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import freeze_support
-# import cupy as cp
+import cupy as cp
 import numpy as np
 import pickle
 
