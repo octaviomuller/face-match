@@ -6,16 +6,40 @@ from flask_cors import CORS
 import platform
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import freeze_support
-import cupy as cp
 import numpy as np
 import pickle
+from types import SimpleNamespace
+import json
+
 
 CACHE_FILE = 'face_cache.pkl'
-UPLOAD_FOLDER = '../alvo'
-FACES_FOLDER = '../faces/'
+CONFIG_JSON = '../config.json'
+UPLOAD_FOLDER = 'alvo'
 
-app = Flask(__name__)
+FACES_FOLDER = None
+NUM_WORKERS = 7
+USADOS_1 = None
+USADOS_2 = None
+
+app = Flask(__name__.split('.')[0])
 CORS(app)
+
+def config_json():
+    global FACES_FOLDER, NUM_WORKERS, USADOS_1, USADOS_2
+    
+    try:
+        with open(CONFIG_JSON, 'r') as arquivo:
+            dados = json.load(arquivo, object_hook=lambda d: SimpleNamespace(**d))
+
+            FACES_FOLDER = dados.folder
+            NUM_WORKERS = dados.numWorkers
+            USADOS_1 = dados.usados1
+            USADOS_2 = dados.usados2
+            
+    except FileNotFoundError:
+        print(f"Arquivo {CONFIG_JSON} não encontrado.")
+    except json.JSONDecodeError:
+        print(f"Erro ao decodificar o arquivo {CONFIG_JSON}. Verifique o formato do JSON.")
 
 def limpar_tela():
     os.system('clear' if platform.system() in ['Linux', 'Darwin'] else 'cls')
@@ -108,10 +132,10 @@ def comparar_rostos(rosto_alvo, lista_de_rostos):
     embeddings = np.array([rosto for _, rosto in lista_de_rostos]).astype(np.float32)
     rosto_alvo = np.array(rosto_alvo).astype(np.float32).reshape(1, -1)
 
-    embeddings_gpu = cp.asarray(embeddings)
-    rosto_alvo_gpu = cp.asarray(rosto_alvo)
+    embeddings_gpu = np.asarray(embeddings)
+    rosto_alvo_gpu = np.asarray(rosto_alvo)
 
-    distancias = cp.linalg.norm(embeddings_gpu - rosto_alvo_gpu, axis=1)
+    distancias = np.linalg.norm(embeddings_gpu - rosto_alvo_gpu, axis=1)
     similaridades = (1 - distancias) * 100
 
     resultados = [(lista_de_rostos[i][0], similaridades[i].item()) for i in range(len(lista_de_rostos))]
@@ -173,8 +197,8 @@ def salvar_cache(cache):
 
 @app.route('/', methods=['POST'])
 def compare():
-    freeze_support()
-    limpar_tela()
+    # freeze_support()
+    # limpar_tela()
 
     if 'file' not in request.files:
         return jsonify({'error': 'Nenhum arquivo foi enviado'}), 400
@@ -188,17 +212,33 @@ def compare():
 
     imagem_alvo = UPLOAD_FOLDER + '/' + file.filename
 
-    num_workers = 7
+    num_workers = NUM_WORKERS
 
     api_url = "https://api.facerecognition.io/api/v1/compare"
 
     names = request.form.getlist('names')
-    folders = request.form.getlist('folders')
     gender = request.form.get('gender')
     moto = request.form.get('moto')
+    usados_1 = request.form.get('usados1')
+    usados_2 = request.form.get('usados2')
+    
+    folders = []
 
     if moto is not None:
         moto = bool(moto)
+    
+    if usados_1 is not None:
+        usados_1 = bool(usados_1)
+
+        if usados_1 is True:
+            folders.append(USADOS_1)
+
+
+    if usados_2 is not None:
+        usados_2 = bool(usados_2)
+
+        if usados_2 is True:
+            folders.append(USADOS_2)
     
     if gender is None:
         gender = 'homens'
@@ -206,6 +246,9 @@ def compare():
         gender = gender.lower()
     
     faces_folder = FACES_FOLDER + '/' + gender
+
+    if len(folders) == 0:
+        folders = None
 
     print("Iniciando comparacao local de rostos...", flush=True)
     rosto_alvo = carregar_imagem(imagem_alvo)[1]
@@ -232,7 +275,7 @@ def compare():
 
             resultados_ordenados = sorted(resultados, key=lambda x: (x[2] is None, x[2]))
 
-            limpar_tela()
+            # limpar_tela()
 
             print("\nResultados ordenados da menor para a maior pontuacao de similaridade:")
             for target, face, score in resultados_ordenados:
@@ -250,4 +293,5 @@ def serve_faces_files(filename):
     return send_from_directory(FACES_FOLDER, filename)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    config_json()
+    app.run(host="0.0.0.0", port=8000, debug=True)

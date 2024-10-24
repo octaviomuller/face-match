@@ -17,11 +17,11 @@ export async function uploadFile() {
   }
 
   if (store.filters.checkbox1) {
-    formData.append('folders', 'usados 1')
+    formData.append('usados1', 'True')
   }
 
   if (store.filters.checkbox2) {
-    formData.append('folders', 'usados 2')
+    formData.append('usados2', 'True')
   }
 
   if (store.filters.name?.length) {
@@ -35,7 +35,7 @@ export async function uploadFile() {
   }
 
   try {
-    const response = await axios.post('http://localhost:5000/', formData, {
+    const response = await axios.post('http://localhost:8000/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

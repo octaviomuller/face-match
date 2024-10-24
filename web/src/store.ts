@@ -19,7 +19,6 @@ export const store = reactive({
   matchResult: null as MatchResult[] | null,
   selectedResultIndex: 0,
   nextMatch() {
-    console.log('nextMatch')
     if (
       this.matchResult &&
       this.selectedResultIndex < this.matchResult?.length - 1
@@ -27,12 +26,12 @@ export const store = reactive({
       this.selectedResultIndex++
   },
   previousMatch() {
-    console.log('previousMatch')
     if (this.selectedResultIndex > 0) this.selectedResultIndex--
   },
   reset() {
     this.matchResult = null
     this.targetImage = null
+    this.selectedResultIndex = 0
   },
   loading: false,
   error: null as string | null,
@@ -41,7 +40,6 @@ export const store = reactive({
   },
   showInfo: false,
   toggleInfo() {
-    console.log(this.showInfo)
     if (this.matchResult) this.showInfo = !this.showInfo
   },
   filters: {

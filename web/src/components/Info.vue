@@ -6,7 +6,7 @@ const info = ref('')
 
 const fetchInfo = async () => {
   try {
-    const url = `http://localhost:5000/faces/${store.matchResult?.[store.selectedResultIndex].info}`
+    const url = `http://localhost:8000/faces/${store.matchResult?.[store.selectedResultIndex].info}`
     const response = await fetch(url)
     if (response.ok) {
       const data = await response.text()

@@ -32,6 +32,9 @@ watch(
   newVal => {
     if (newVal === null) {
       selectedImage.value = null
+      if (fileInput.value) {
+        fileInput.value.value = '' // Reseta o valor do input
+      }
     }
   },
 )
@@ -42,7 +45,7 @@ const tapToAddText = computed(() => {
 
 const imgSrc = computed(() => {
   if (props.disable && store.matchResult?.length)
-    return `http://localhost:5000/faces/${store.matchResult?.[store.selectedResultIndex].name}`
+    return `http://localhost:8000/faces/${store.matchResult?.[store.selectedResultIndex].name}`
 
   return selectedImage.value || userIcon
 })
