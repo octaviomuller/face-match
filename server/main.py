@@ -197,8 +197,8 @@ def salvar_cache(cache):
 
 @app.route('/', methods=['POST'])
 def compare():
-    # freeze_support()
-    # limpar_tela()
+    freeze_support()
+    limpar_tela()
 
     if 'file' not in request.files:
         return jsonify({'error': 'Nenhum arquivo foi enviado'}), 400
@@ -275,7 +275,7 @@ def compare():
 
             resultados_ordenados = sorted(resultados, key=lambda x: (x[2] is None, x[2]))
 
-            # limpar_tela()
+            limpar_tela()
 
             print("\nResultados ordenados da menor para a maior pontuacao de similaridade:")
             for target, face, score in resultados_ordenados:
